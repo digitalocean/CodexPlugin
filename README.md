@@ -1,7 +1,7 @@
 # droplet-workspace
 
 A Codex plugin that provisions a DigitalOcean droplet from the **Codex Universal**
-image (id `233103029`) and wires it up as a remote SSH workspace for the Codex
+image (id `251129059`) and wires it up as a remote SSH workspace for the Codex
 desktop app. It uses the installed Codex DigitalOcean app, creates and boots
 the droplet without doctl or API tokens, configures
 local SSH access, and hands off to Codex. The user picks the region and size

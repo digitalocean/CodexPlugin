@@ -137,7 +137,7 @@ Call the **DigitalOcean** app tool **`droplet-create`**:
 | `Name` | `name` from step 2 | |
 | `Region` | `<region>` from step 4 | |
 | `Size` | `<size>` from step 5 | |
-| `ImageID` | `234061005` | DigitalOcean **Codex Universal** image |
+| `ImageID` | `251129059` | DigitalOcean **Codex Universal** image |
 | `SSHKeys` | `["<key_id>"]` | |
 
 Extract `droplet.id` from the response — this is `<droplet_id>`.
