@@ -9,14 +9,14 @@ description: >
 # Provision a DigitalOcean droplet as a Codex remote workspace
 
 Follow these steps in order. Do not skip or reorder them.
-**Only the installed Codex DigitalOcean app tools and the bundled Python scripts
-may be used. doctl, ad hoc integration configs, and any other DigitalOcean CLI
-tools are prohibited.**
+**Use only this plugin's bundled DigitalOcean MCP tools and Python scripts.
+doctl, ad hoc integration configs, and any other DigitalOcean CLI tools are
+prohibited.**
 
 ## Before you start
 
-- **Prerequisites:** a funded DigitalOcean account, the installed and
-  authenticated Codex **DigitalOcean** app, a local `ssh`/`ssh-keygen`
+- **Prerequisites:** a funded DigitalOcean account, an authenticated connection
+  to this plugin's bundled DigitalOcean MCP server, a local `ssh`/`ssh-keygen`
   (OpenSSH), Python 3, and the Codex desktop app.
 - **Cost:** the droplet bills **hourly from creation until you delete it**.
   Sizes in step 5 show approximate monthly rates. Remind the user to delete it
@@ -34,20 +34,19 @@ tools are prohibited.**
   locate the directory that actually contains `scripts/keygen.py`. Use
   `<skill_dir>/scripts/<name>.py` (an absolute path) in **every** command below.
 
-## Step 1 — Verify DigitalOcean app access
+## Step 1 — Verify DigitalOcean MCP access
 
-This plugin depends on the single Codex **DigitalOcean** app. Use it for all
-DigitalOcean operations; do not register or log in to separate plugin-owned app
-integrations.
+This plugin depends on its bundled **DigitalOcean MCP server**. Use its tools
+for all DigitalOcean operations.
 
-The **DigitalOcean** app provides both:
+The DigitalOcean MCP server provides both:
 - SSH key tools: `key-create`, `key-list`, `key-delete`.
 - Droplet tools: `droplet-create`, `droplet-get`, `droplet-delete`.
 
-Confirm that these tools are available before continuing. If the app's tools are
-missing or unauthenticated, stop and tell the user to install or authenticate
-the DigitalOcean app in Codex. Do not fall back to doctl, API tokens, or a local
-integration config.
+Confirm that these tools are available before continuing. If the MCP tools are
+missing or unauthenticated, stop and tell the user to authenticate the
+DigitalOcean MCP connection in Codex. Do not fall back to doctl, API tokens, or
+a local integration config.
 
 ## Step 2 — Generate SSH key pair
 
@@ -67,7 +66,7 @@ How these relate (all derived from one random `prefix` like `bright-hawk-a3f2`):
 
 ## Step 3 — Upload SSH public key
 
-Call the **DigitalOcean** app tool **`key-create`**:
+Call the DigitalOcean MCP tool **`key-create`**:
 
 | Parameter | Value |
 |-----------|-------|
@@ -77,7 +76,7 @@ Call the **DigitalOcean** app tool **`key-create`**:
 Extract `ssh_key.id` from the response — this is `<key_id>`.
 
 If the call fails because a key with that name or fingerprint **already exists**
-(e.g. a previous run), do not create a duplicate: call the **DigitalOcean** app
+(e.g. a previous run), do not create a duplicate: call the DigitalOcean MCP
 tool **`key-list`**, find the entry whose `name` matches `key_name` (or whose
 fingerprint matches the uploaded key), and use its `id` as `<key_id>`.
 
@@ -130,7 +129,7 @@ again — do not pass an unlisted value through. The chosen slug is `<size>`.
 
 ## Step 6 — Create droplet
 
-Call the **DigitalOcean** app tool **`droplet-create`**:
+Call the DigitalOcean MCP tool **`droplet-create`**:
 
 | Parameter | Value | Notes |
 |-----------|-------|-------|
@@ -188,7 +187,7 @@ address, skip the heartbeat and continue immediately to step 8.
 
 ## Step 8 — Check whether the droplet is active
 
-Call the **DigitalOcean** app tool **`droplet-get`** once with
+Call the DigitalOcean MCP tool **`droplet-get`** once with
 `ID: <droplet_id>`.
 
 If the response has `status == "active"` **and** `networks.v4` contains an
@@ -216,8 +215,8 @@ Use these values for the 1-minute follow-up heartbeat:
 | `status` | `ACTIVE` |
 | `prompt` | `Resume provisioning DigitalOcean droplet <name> (<droplet_id>). Start at Step 8: check whether it is active and has a public IPv4 address, then continue the workflow. If it is still not ready, schedule another 1-minute heartbeat. The droplet bills hourly until deleted.` |
 
-Keep all status checks with the DigitalOcean app — do not use doctl or any other
-tool to check droplet status.
+Keep all status checks with the DigitalOcean MCP server. Do not use doctl or any
+other tool to check droplet status.
 
 ## Step 9 — Configure local SSH
 
@@ -253,9 +252,9 @@ the alias → choose the remote folder.**
 
 The droplet bills hourly until deleted. To tear down:
 
-1. **Delete the droplet** — **DigitalOcean** app tool **`droplet-delete`** with
+1. **Delete the droplet** — DigitalOcean MCP tool **`droplet-delete`** with
    `ID: <droplet_id>`.
-2. **Delete the SSH key** (optional) — **DigitalOcean** app tool **`key-delete`**
+2. **Delete the SSH key** (optional) — DigitalOcean MCP tool **`key-delete`**
    with the `<key_id>` from step 3.
 
 Always confirm with the user before deleting. Do not use doctl for cleanup.

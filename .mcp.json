@@ -1,0 +1,7 @@
+{
+  "mcpServers": {
+    "digitalocean-mcp": {
+      "url": "https://mcp.digitalocean.com/mcp"
+    }
+  }
+}

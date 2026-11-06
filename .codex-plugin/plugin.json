@@ -1,37 +1,43 @@
 {
-  "name": "droplet-workspace",
-  "version": "0.2.3",
-  "description": "Provision a DigitalOcean droplet through the Codex DigitalOcean App and add it as a Codex remote SSH workspace.",
+  "name": "DigitalOcean",
+  "version": "0.2.7",
+  "description": "Provision a DigitalOcean droplet as a remote Codex workspace.",
   "author": {
-    "name": "DigitalOcean"
+    "name": "DigitalOcean",
+    "url": "https://github.com/digitalocean"
   },
   "homepage": "https://www.digitalocean.com/",
+  "repository": "https://github.com/digitalocean/CodexPlugin",
   "keywords": [
     "digitalocean",
     "droplet",
     "virtual-machine",
     "remote-session"
   ],
-  "skills": "./skills",
-  "apps": "./.app.json",
+  "skills": "./skills/",
+  "mcpServers": "./.mcp.json",
   "interface": {
-    "displayName": "DigitalOcean",
-    "shortDescription": "Provision a DigitalOcean droplet as a Codex remote SSH workspace.",
-    "longDescription": "Creates a DigitalOcean Codex droplet using the installed Codex DigitalOcean App, uploads an SSH key, creates and polls the droplet, then configures local SSH access.",
+    "displayName": "DigitalOcean 2.0",
+    "shortDescription": "Provision a droplet as a Codex workspace",
+    "longDescription": "Provision and configure a DigitalOcean droplet as a remote Codex SSH workspace using the plugin's bundled DigitalOcean MCP server.",
     "developerName": "DigitalOcean",
-    "category": "Productivity",
+    "category": "Developer Tools",
     "capabilities": [
       "Interactive",
       "Write"
     ],
     "websiteURL": "https://www.digitalocean.com/",
+    "supportURL": "https://www.digitalocean.com/company/contact/support",
     "privacyPolicyURL": "https://www.digitalocean.com/legal/privacy-policy",
     "termsOfServiceURL": "https://www.digitalocean.com/legal/terms-of-service-agreement",
     "defaultPrompt": [
-      "Provision a DigitalOcean droplet for Codex."
+      "Provision a DigitalOcean droplet for Codex"
     ],
     "brandColor": "#1AAFBF",
-    "logo": "./assets/DO_Logo.png",
-    "logoDark": "./assets/DO_Logo_Dark.png"
+    "brandColorDark": "#40D5E5",
+    "logo": "./assets/logo.png",
+    "logoDark": "./assets/logo-dark.png",
+    "composerIcon": "./assets/composer-icon.png",
+    "composerIconDark": "./assets/composer-icon-dark.png"
   }
 }
