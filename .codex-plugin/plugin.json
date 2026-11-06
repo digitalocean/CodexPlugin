@@ -18,7 +18,7 @@
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "DigitalOcean 2.0",
-    "shortDescription": "Provision a droplet as a Codex workspace",
+    "shortDescription": "Droplet as a Codex workspace",
     "longDescription": "Provision and configure a DigitalOcean droplet as a remote Codex SSH workspace using the plugin's bundled DigitalOcean MCP server.",
     "developerName": "DigitalOcean",
     "category": "Developer Tools",
