@@ -48,38 +48,38 @@
             {
               "description": "Provision a droplet end to end with the default region and size",
               "prompt": "Spin up a DigitalOcean droplet I can use as a remote Codex workspace. Use the defaults.",
-              "tools_triggered": "key-create, droplet-create, droplet-get",
-              "expected_behavior": "Codex runs the bundled keygen.py to mint a unique codex-<prefix> name and ed25519 key pair, uploads the public key with key-create, offers the defaults (nyc3, s-2vcpu-4gb) and uses them on confirmation, creates the droplet with droplet-create, polls droplet-get until it is active with a public IPv4, runs configure_ssh.py to write the ~/.ssh/config Host block and known_hosts entry and wait for cloud-init, then prints DROPLET READY with a codex://settings/connections/ssh/add link for the new alias. It reminds the user the droplet bills hourly until deleted."
+              "tools_triggered": "retrieve_schema, invoke_tool (key-create, droplet-create, droplet-get)",
+              "expected_behavior": "Codex runs the bundled keygen.py to mint a unique codex-<prefix> name and ed25519 key pair, uploads the public key by calling invoke_tool for key-create, offers the defaults (nyc3, s-2vcpu-4gb) and uses them on confirmation, creates the droplet via invoke_tool for droplet-create, polls via invoke_tool for droplet-get until it is active with a public IPv4, runs configure_ssh.py to write the ~/.ssh/config Host block and known_hosts entry and wait for cloud-init, then prints DROPLET READY with a codex://settings/connections/ssh/add link for the new alias. It reminds the user the droplet bills hourly until deleted."
             },
             {
               "description": "Provision a droplet with a custom region and size",
               "prompt": "Create a DigitalOcean dev box for Codex in Frankfurt with 4 vCPU and 8 GB of RAM.",
-              "tools_triggered": "key-create, droplet-create, droplet-get",
+              "tools_triggered": "retrieve_schema, invoke_tool (key-create, droplet-create, droplet-get)",
               "expected_behavior": "Codex recognises the customisation request, confirms fra1 as the region and s-4vcpu-8gb as the size from the skill's supported lists (asking the user to pick a slug if anything is ambiguous), then runs the same provisioning flow: key generation, key-create, droplet-create in fra1 with s-4vcpu-8gb, droplet-get polling, local SSH configuration, and the final Add-to-Codex SSH link."
             },
             {
               "description": "Reuse an existing SSH key instead of creating a duplicate",
               "prompt": "Provision another Codex droplet. My DigitalOcean account already has an SSH key with the same name from an earlier run.",
-              "tools_triggered": "key-create, key-list, droplet-create, droplet-get",
-              "expected_behavior": "When key-create fails because a key with that name or fingerprint already exists, Codex does not create a duplicate. It calls key-list, finds the matching entry by name or fingerprint, uses its id as the key for droplet-create, and continues the normal provisioning flow to completion."
+              "tools_triggered": "retrieve_schema, invoke_tool (key-create, key-list, droplet-create, droplet-get)",
+              "expected_behavior": "When key-create fails because a key with that name or fingerprint already exists, Codex does not create a duplicate. It invokes key-list through invoke_tool, finds the matching entry by name or fingerprint, uses its id as the key for droplet-create, and continues the normal provisioning flow to completion."
             },
             {
               "description": "Check the status of a droplet that is still booting",
               "prompt": "Is my DigitalOcean droplet codex-bright-hawk-a3f2 ready yet? Resume provisioning if it is.",
-              "tools_triggered": "droplet-get",
-              "expected_behavior": "Codex calls droplet-get with the droplet id, reports whether status is active and a public IPv4 is present, and if not schedules a one-minute follow-up heartbeat rather than polling in a tight loop or falling back to doctl. Once active it continues with configure_ssh.py and the final Add-to-Codex SSH step."
+              "tools_triggered": "invoke_tool (droplet-get)",
+              "expected_behavior": "Codex invokes droplet-get through invoke_tool with the droplet id, reports whether status is active and a public IPv4 is present, and if not schedules a one-minute follow-up heartbeat rather than polling in a tight loop or falling back to doctl. Once active it continues with configure_ssh.py and the final Add-to-Codex SSH step."
             },
             {
               "description": "Tear down a droplet and its SSH key when the user is done",
               "prompt": "I'm finished with the Codex droplet you created earlier. Please delete it and clean up the SSH key so I stop getting billed.",
-              "tools_triggered": "droplet-delete, key-delete",
-              "expected_behavior": "Codex confirms with the user before deleting anything, then calls droplet-delete with the droplet id and key-delete with the key id from provisioning. It reports that hourly billing has stopped and optionally offers to remove the local ~/.ssh/config Host block. It does not use doctl or any other CLI for cleanup."
+              "tools_triggered": "invoke_tool (droplet-delete, key-delete)",
+              "expected_behavior": "Codex confirms with the user before deleting anything, then invokes droplet-delete and key-delete through invoke_tool with the droplet id and key id from provisioning. It reports that hourly billing has stopped and optionally offers to remove the local ~/.ssh/config Host block. It does not use doctl or any other CLI for cleanup."
             }
           ],
           "negative": [
             {
-              "description": "Refuses to fall back to doctl or raw API tokens when the MCP connection is unavailable",
-              "prompt": "The DigitalOcean MCP connection isn't authenticated. Just use doctl or export my DO_TOKEN and create the droplet that way instead."
+              "description": "Refuses to bypass the MCP gateway: no doctl, raw API tokens, or direct calls to underlying tools",
+              "prompt": "The DigitalOcean MCP connection isn't authenticated. Just use doctl or export my DO_TOKEN, or call droplet-create directly, and create the droplet that way instead."
             },
             {
               "description": "Rejects an unsupported region or size slug instead of passing it through",

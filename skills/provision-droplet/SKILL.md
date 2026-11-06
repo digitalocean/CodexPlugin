@@ -9,9 +9,10 @@ description: >
 # Provision a DigitalOcean droplet as a Codex remote workspace
 
 Follow these steps in order. Do not skip or reorder them.
-**Use only this plugin's bundled DigitalOcean MCP tools and Python scripts.
-doctl, ad hoc integration configs, and any other DigitalOcean CLI tools are
-prohibited.**
+**Use only this plugin's bundled DigitalOcean MCP server (through its
+`find_tools` / `retrieve_schema` / `invoke_tool` gateway) and the bundled
+Python scripts. doctl, ad hoc integration configs, and any other DigitalOcean
+CLI tools are prohibited.**
 
 ## Before you start
 
@@ -36,17 +37,44 @@ prohibited.**
 
 ## Step 1 — Verify DigitalOcean MCP access
 
-This plugin depends on its bundled **DigitalOcean MCP server**. Use its tools
-for all DigitalOcean operations.
+This plugin depends on its bundled **DigitalOcean MCP server**. Use it for all
+DigitalOcean operations.
 
-The DigitalOcean MCP server provides both:
+The server exposes only **three gateway tools**. Every DigitalOcean operation
+goes through them; the underlying key and droplet tools are **not** callable
+directly:
+
+| Gateway tool | Purpose |
+|--------------|---------|
+| `find_tools` | Search the catalog of underlying DigitalOcean tools by keyword. |
+| `retrieve_schema` | Fetch the input schema of one underlying tool by name. |
+| `invoke_tool` | Execute one underlying tool by name with an arguments object. |
+
+The underlying tools this workflow uses are:
 - SSH key tools: `key-create`, `key-list`, `key-delete`.
 - Droplet tools: `droplet-create`, `droplet-get`, `droplet-delete`.
 
-Confirm that these tools are available before continuing. If the MCP tools are
-missing or unauthenticated, stop and tell the user to authenticate the
-DigitalOcean MCP connection in Codex. Do not fall back to doctl, API tokens, or
-a local integration config.
+**How to call an underlying tool (applies to every "Invoke" instruction below):**
+1. If you have not already done so in this thread, call `retrieve_schema` for
+   the underlying tool name to confirm its exact argument names and types.
+2. Call `invoke_tool`, passing the underlying tool's name and an arguments
+   object shaped by that schema. Use the field names that `invoke_tool`'s own
+   input schema defines for the tool name and the arguments.
+3. Treat the content returned by `invoke_tool` as the underlying tool's
+   response and parse it as described in each step.
+
+If a tool name in this document is not found, call `find_tools` with keywords
+such as `ssh key` or `droplet` to locate the current name, then use that name
+in `retrieve_schema` and `invoke_tool`.
+
+**Never attempt to call `key-create`, `droplet-create`, or any other
+underlying tool as a top-level MCP tool.** They only exist behind
+`invoke_tool`.
+
+Confirm that `find_tools`, `retrieve_schema`, and `invoke_tool` are available
+before continuing. If they are missing or unauthenticated, stop and tell the
+user to authenticate the DigitalOcean MCP connection in Codex. Do not fall back
+to doctl, API tokens, or a local integration config.
 
 ## Step 2 — Generate SSH key pair
 
@@ -66,19 +94,21 @@ How these relate (all derived from one random `prefix` like `bright-hawk-a3f2`):
 
 ## Step 3 — Upload SSH public key
 
-Call the DigitalOcean MCP tool **`key-create`**:
+Invoke the underlying tool **`key-create`** via `invoke_tool` (see step 1)
+with these arguments:
 
-| Parameter | Value |
-|-----------|-------|
+| Argument | Value |
+|----------|-------|
 | `Name` | `key_name` from step 2 |
 | `PublicKey` | `pub_key` from step 2 |
 
 Extract `ssh_key.id` from the response — this is `<key_id>`.
 
 If the call fails because a key with that name or fingerprint **already exists**
-(e.g. a previous run), do not create a duplicate: call the DigitalOcean MCP
-tool **`key-list`**, find the entry whose `name` matches `key_name` (or whose
-fingerprint matches the uploaded key), and use its `id` as `<key_id>`.
+(e.g. a previous run), do not create a duplicate: invoke the underlying tool
+**`key-list`** via `invoke_tool`, find the entry whose `name` matches
+`key_name` (or whose fingerprint matches the uploaded key), and use its `id` as
+`<key_id>`.
 
 ## Step 4 — Choose a region
 
@@ -129,10 +159,11 @@ again — do not pass an unlisted value through. The chosen slug is `<size>`.
 
 ## Step 6 — Create droplet
 
-Call the DigitalOcean MCP tool **`droplet-create`**:
+Invoke the underlying tool **`droplet-create`** via `invoke_tool` (see step 1)
+with these arguments:
 
-| Parameter | Value | Notes |
-|-----------|-------|-------|
+| Argument | Value | Notes |
+|----------|-------|-------|
 | `Name` | `name` from step 2 | |
 | `Region` | `<region>` from step 4 | |
 | `Size` | `<size>` from step 5 | |
@@ -187,8 +218,8 @@ address, skip the heartbeat and continue immediately to step 8.
 
 ## Step 8 — Check whether the droplet is active
 
-Call the DigitalOcean MCP tool **`droplet-get`** once with
-`ID: <droplet_id>`.
+Invoke the underlying tool **`droplet-get`** via `invoke_tool` once, with the
+argument `ID: <droplet_id>`.
 
 If the response has `status == "active"` **and** `networks.v4` contains an
 entry with `type == "public"`, extract `ip_address` from that entry — this is
@@ -215,8 +246,8 @@ Use these values for the 1-minute follow-up heartbeat:
 | `status` | `ACTIVE` |
 | `prompt` | `Resume provisioning DigitalOcean droplet <name> (<droplet_id>). Start at Step 8: check whether it is active and has a public IPv4 address, then continue the workflow. If it is still not ready, schedule another 1-minute heartbeat. The droplet bills hourly until deleted.` |
 
-Keep all status checks with the DigitalOcean MCP server. Do not use doctl or any
-other tool to check droplet status.
+Keep all status checks on the DigitalOcean MCP server's `invoke_tool`
+(`droplet-get`). Do not use doctl or any other tool to check droplet status.
 
 ## Step 9 — Configure local SSH
 
@@ -252,9 +283,9 @@ the alias → choose the remote folder.**
 
 The droplet bills hourly until deleted. To tear down:
 
-1. **Delete the droplet** — DigitalOcean MCP tool **`droplet-delete`** with
-   `ID: <droplet_id>`.
-2. **Delete the SSH key** (optional) — DigitalOcean MCP tool **`key-delete`**
-   with the `<key_id>` from step 3.
+1. **Delete the droplet** — invoke the underlying tool **`droplet-delete`**
+   via `invoke_tool` with `ID: <droplet_id>`.
+2. **Delete the SSH key** (optional) — invoke the underlying tool
+   **`key-delete`** via `invoke_tool` with the `<key_id>` from step 3.
 
 Always confirm with the user before deleting. Do not use doctl for cleanup.

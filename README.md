@@ -26,9 +26,10 @@ droplet-workspace/
 - **`.mcp.json`** — declares the single bundled MCP server,
   `https://mcp.digitalocean.com/mcp`, referenced from the manifest's
   `mcpServers` key. Authenticate the connection in Codex before running this
-  plugin. It provides both the SSH key tools (`key-create`, `key-list`,
-  `key-delete`) and the droplet tools (`droplet-create`, `droplet-get`,
-  `droplet-delete`).
+  plugin. The server exposes three gateway tools, `find_tools`,
+  `retrieve_schema`, and `invoke_tool`; the SSH key tools (`key-create`,
+  `key-list`, `key-delete`) and droplet tools (`droplet-create`, `droplet-get`,
+  `droplet-delete`) are reached only through `invoke_tool`.
 - **`SKILL.md`** — the orchestration guide. It drives the DigitalOcean MCP
   tools and the two scripts in order, prompts the user for region/size, and
   explains the one manual Codex step at the end.
