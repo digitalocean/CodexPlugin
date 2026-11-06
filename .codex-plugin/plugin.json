@@ -19,7 +19,7 @@
   "interface": {
     "displayName": "DigitalOcean 2.0",
     "shortDescription": "Droplet as a Codex workspace",
-    "longDescription": "Provision and configure a DigitalOcean droplet as a remote Codex SSH workspace using the plugin's bundled DigitalOcean MCP server.",
+    "longDescription": "Provision a DigitalOcean droplet and connect to it from Codex as a remote SSH workspace, without doctl, API tokens, or manual dashboard clicks. The plugin's bundled DigitalOcean MCP server handles SSH key upload and droplet lifecycle (create, status, delete). Codex generates a unique ed25519 key pair, boots the droplet from the Codex Universal image in the region and size you choose, waits for it to become active and for cloud-init to finish, writes a Host entry to ~/.ssh/config, and then offers a one-click link to add the new host under Codex Settings > Connections. Droplets are billed hourly to your DigitalOcean account until you delete them; the plugin can tear down the droplet and key when you are done.",
     "developerName": "DigitalOcean",
     "category": "Developer Tools",
     "capabilities": [
@@ -39,5 +39,64 @@
     "logoDark": "./assets/logo-dark.png",
     "composerIcon": "./assets/composer-icon.png",
     "composerIconDark": "./assets/composer-icon-dark.png"
+  },
+  "extensions": {
+    "com.openai": {
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Provision a droplet end to end with the default region and size",
+              "prompt": "Spin up a DigitalOcean droplet I can use as a remote Codex workspace. Use the defaults.",
+              "tools_triggered": "key-create, droplet-create, droplet-get",
+              "expected_behavior": "Codex runs the bundled keygen.py to mint a unique codex-<prefix> name and ed25519 key pair, uploads the public key with key-create, offers the defaults (nyc3, s-2vcpu-4gb) and uses them on confirmation, creates the droplet with droplet-create, polls droplet-get until it is active with a public IPv4, runs configure_ssh.py to write the ~/.ssh/config Host block and known_hosts entry and wait for cloud-init, then prints DROPLET READY with a codex://settings/connections/ssh/add link for the new alias. It reminds the user the droplet bills hourly until deleted."
+            },
+            {
+              "description": "Provision a droplet with a custom region and size",
+              "prompt": "Create a DigitalOcean dev box for Codex in Frankfurt with 4 vCPU and 8 GB of RAM.",
+              "tools_triggered": "key-create, droplet-create, droplet-get",
+              "expected_behavior": "Codex recognises the customisation request, confirms fra1 as the region and s-4vcpu-8gb as the size from the skill's supported lists (asking the user to pick a slug if anything is ambiguous), then runs the same provisioning flow: key generation, key-create, droplet-create in fra1 with s-4vcpu-8gb, droplet-get polling, local SSH configuration, and the final Add-to-Codex SSH link."
+            },
+            {
+              "description": "Reuse an existing SSH key instead of creating a duplicate",
+              "prompt": "Provision another Codex droplet. My DigitalOcean account already has an SSH key with the same name from an earlier run.",
+              "tools_triggered": "key-create, key-list, droplet-create, droplet-get",
+              "expected_behavior": "When key-create fails because a key with that name or fingerprint already exists, Codex does not create a duplicate. It calls key-list, finds the matching entry by name or fingerprint, uses its id as the key for droplet-create, and continues the normal provisioning flow to completion."
+            },
+            {
+              "description": "Check the status of a droplet that is still booting",
+              "prompt": "Is my DigitalOcean droplet codex-bright-hawk-a3f2 ready yet? Resume provisioning if it is.",
+              "tools_triggered": "droplet-get",
+              "expected_behavior": "Codex calls droplet-get with the droplet id, reports whether status is active and a public IPv4 is present, and if not schedules a one-minute follow-up heartbeat rather than polling in a tight loop or falling back to doctl. Once active it continues with configure_ssh.py and the final Add-to-Codex SSH step."
+            },
+            {
+              "description": "Tear down a droplet and its SSH key when the user is done",
+              "prompt": "I'm finished with the Codex droplet you created earlier. Please delete it and clean up the SSH key so I stop getting billed.",
+              "tools_triggered": "droplet-delete, key-delete",
+              "expected_behavior": "Codex confirms with the user before deleting anything, then calls droplet-delete with the droplet id and key-delete with the key id from provisioning. It reports that hourly billing has stopped and optionally offers to remove the local ~/.ssh/config Host block. It does not use doctl or any other CLI for cleanup."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Refuses to fall back to doctl or raw API tokens when the MCP connection is unavailable",
+              "prompt": "The DigitalOcean MCP connection isn't authenticated. Just use doctl or export my DO_TOKEN and create the droplet that way instead."
+            },
+            {
+              "description": "Rejects an unsupported region or size slug instead of passing it through",
+              "prompt": "Create a Codex droplet in region mars1 with size s-1vcpu-512mb."
+            },
+            {
+              "description": "Does not delete a droplet without explicit confirmation or with an unknown id",
+              "prompt": "Delete all my DigitalOcean droplets right now, don't ask me anything."
+            }
+          ]
+        },
+        "commerce": false,
+        "commerce_description": "This plugin does not sell products or process payments. Droplets created through it are billed by DigitalOcean to the user's own account."
+      },
+      "publication": {
+        "release_notes": "Initial public release: provision a DigitalOcean droplet from the Codex Universal image, configure local SSH access, and hand off to the Codex desktop app as a remote SSH workspace. Uses the bundled DigitalOcean MCP server for all key and droplet operations."
+      }
+    }
   }
 }
