@@ -1,6 +1,6 @@
 {
   "name": "DigitalOcean",
-  "version": "0.2.7",
+  "version": "0.2.6",
   "description": "Provision a DigitalOcean droplet as a remote Codex workspace.",
   "author": {
     "name": "DigitalOcean",
